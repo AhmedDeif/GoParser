@@ -1,0 +1,777 @@
+import java.io.*;
+import java_cup.runtime.*;
+
+/*
+parser code {:
+:};*/
+	
+/* Terminals (tokens returned by the scanner). */
+terminal String IDENTIFIER, BREAK, DEFAULT, FUNC, CASE, ELSE,
+					PACKAGE, SWITCH, CONST, IF, FOR, IMPORT, RETURN, VAR, REL_OP, AND_OP, OR_OP, PLUS, MINUS, STRING_LIT,
+					OPEN_PARAN, CLOSE_PARAN, OPEN_CURLY, CLOSE_CURLY,
+					 SEMI_COLON, COMMA, DOT, COLON, COLON_EQUAL,
+					EQUAL, CDOTS, ASTRISK, SHIFT_LEFT, SHIFT_RIGHT, SLASH,
+					EXCLAMATION, AMBERSAND, PERCENT, INCREMENT, DECREMENT,INT_LIT;	
+
+/* Non-terminals */
+nonterminal String binary_op,type,type_name,type_lit,function_type,
+identifier_list,signature,result,
+parameters,parameter_list,method_name,block,statement_list,statement,
+declaration, const_decl,var_decl,top_level_decl,const_spec_semi, const_spec,
+id_list,var_spec, var_spec_semi, function_decl,
+function_name, function_body,method_decl, receiver, operand, param_dec,  paramater_decl, express_comma, operand_name,
+ function_lit,qualified_ident,
+primary_expr,selector , arguments , simple_stmt, 
+return_stmt, break_stmt , if_stmt, switch_stmt, for_stmt, assign_op ,expr_switch_stmt,expr_case_clause_more,expr_case_clause,expr_switch_case,
+condition,for_clause,
+init_stmt,post_stmt,import_path,package_name,
+import_spec,import_spec_semi,import_decl,package_clause,import_dec_semi,
+top_level_decl_more ,source_file, expression_stmt,
+inc_dec_stmt, assignment,unary_exp,expression_list,literal,basic_lit;
+nonterminal Expression expression,short_var_decl;
+nonterminal Function function;
+precedence left SEMI_COLON;
+precedence left COMMA;
+precedence left OPEN_PARAN;
+precedence left REL_OP, AND_OP, OR_OP;
+precedence left ASTRISK;
+precedence left PLUS;
+precedence left MINUS;
+precedence left PERCENT, SLASH, SHIFT_LEFT, SHIFT_RIGHT, AMBERSAND, DOT,EXCLAMATION;
+
+start with source_file;
+
+/* The grammar */
+source_file ::= package_clause SEMI_COLON import_dec_semi top_level_decl_more
+				{:
+					System.out.println("source ;");
+				:}
+				|
+				package_clause import_dec_semi top_level_decl_more
+				{:
+					System.out.println("source import");
+				
+				:};
+type ::= 	type_name
+			{:
+				System.out.println("type type name");
+			:}
+			|
+			type_lit
+			{:
+			System.out.println("type type lit");
+			:};
+
+type_name ::= IDENTIFIER
+			{:
+			System.out.println("type name");
+			:};
+			
+type_lit ::= function_type
+			{:
+			System.out.println("type lit");
+			:};
+function_type ::= FUNC signature
+			{:
+			System.out.println("func type");
+			:};
+signature ::= parameters result
+			{:
+				System.out.println("sign param res");
+			:}
+			|
+			parameters
+			{:
+				System.out.println("sign parameters");
+			:};
+result ::= parameters 
+			{:
+				System.out.println("res param");
+			:}
+			|
+			OPEN_PARAN type CLOSE_PARAN
+			{:
+				System.out.println("res (type)");
+			:};
+parameters ::= OPEN_PARAN parameter_list CLOSE_PARAN
+				{:
+					System.out.println("params (list)");
+				:}
+				|
+				OPEN_PARAN CLOSE_PARAN
+				{:
+					System.out.println("params ()");
+				:};
+parameter_list ::= paramater_decl param_dec	
+					{:
+						System.out.println("param_list");
+					:};
+param_dec ::=  COMMA paramater_decl param_dec
+				{:
+					System.out.println(" comma paramter declaration");
+				:}
+				|
+				{:
+				:};
+paramater_decl ::= identifier_list CDOTS type
+				{:
+					System.out.println("parameter declaration identifier list cdots type");
+				:}
+				|
+				identifier_list type
+				{:
+					System.out.println("parameter declaration identifier lsit type");
+				:};
+method_name ::= IDENTIFIER
+				{:
+					System.out.println(" method name identifier");
+				:};
+
+block ::= 	OPEN_CURLY statement_list:stl CLOSE_CURLY
+			{:
+				System.out.println("BEGIN FUNC:");
+				System.out.println(" block open curly statement list close curly");
+				RESULT = stl;
+			:};
+
+statement_list ::= statement:s statement_list:stl
+					{:
+						System.out.println(" statement list statement statement list");
+						if(stl.length() > 0){
+							RESULT = s + "\n" + stl ;
+						}
+						else {
+							RESULT = s + stl ;
+						}
+					:}
+					|
+					{:
+						RESULT = "";
+					:};
+declaration ::= const_decl:cd SEMI_COLON
+				{:
+					System.out.println(" declaration constant declaration semi colon");
+					RESULT = cd;
+				:}
+				|
+				var_decl:vd SEMI_COLON
+				{:
+					System.out.println(" declaration var declaration semi colon");
+					RESULT = vd;
+				:};
+				
+top_level_decl ::= declaration
+					{:
+						System.out.println("top level decl");
+					:}
+					|
+					function_decl SEMI_COLON
+					{:
+						System.out.println(" top level declaration function_declaration semi colon");
+					:}
+					|
+					function_decl
+					{:
+						System.out.println(" top level declaration function declaration");
+					:}
+					|
+					method_decl SEMI_COLON
+					{:
+						System.out.println(" top level declaration method_declaration semi colon");
+					:}
+					|
+					method_decl 
+					{:
+						System.out.println(" top level declaration method_declaration");
+					:};
+top_level_decl_more ::= top_level_decl top_level_decl_more
+						{:
+							System.out.println(" top level declaration helper");
+						:}
+						|
+						{::};
+											
+const_decl ::= CONST const_spec:cs
+				{:
+					System.out.println(" constant declaration const sonst spec");
+					RESULT = cs;
+				:}
+				|
+				CONST OPEN_PARAN const_spec_semi CLOSE_PARAN
+				{:
+					System.out.println(" constant declaration const ( const spec )");
+				:};
+				
+const_spec_semi ::= const_spec SEMI_COLON const_spec_semi
+					{:
+						System.out.println(" constant spec helper");
+					:}
+					|
+					{:
+					:};
+const_spec ::= 	IDENTIFIER:d type EQUAL expression:e 
+				{:
+					System.out.println("constant spec identifier type = expression");
+					System.out.println(d + " = " + e.address);
+				:}
+				|
+				IDENTIFIER:d  EQUAL expression:e
+				{:
+					System.out.println("constant spec identifier = expression");
+					System.out.println(d + " = " + e.address);
+				:}
+				|
+				IDENTIFIER
+				{:
+					System.out.println("constant spec identifier");
+				:};
+identifier_list ::= IDENTIFIER:d id_list:idList
+					{:
+						System.out.println(" identitifer list identifier");
+						RESULT = d +  idList;
+					:};
+					
+id_list ::= COMMA IDENTIFIER:d id_list:idList 
+			{:
+				System.out.println(" id list comma identifier id list");
+				RESULT = "," + d + idList; 
+			:}
+			|
+			{:
+				RESULT = "";
+			:};
+expression_list ::= expression express_comma
+					{:
+						System.out.println(" expression list expression express_comma ");
+					:};
+
+
+express_comma ::= COMMA expression express_comma
+				{:
+					System.out.println(" comma expression helper");
+				:}
+				|
+				{:
+				:};
+
+
+expression ::= unary_exp:u_exp
+				{:
+					//System.out.println("EXPRESSION Unary" + u_exp);
+					//System.err.println("unary_exp not implemented yet.....");
+					RESULT = new Expression(u_exp);
+					System.err.println(u_exp);
+				:}
+				|
+				expression:e1 REL_OP:r expression:e2
+				{:
+					System.out.println("EXPRESSION Rel op");
+					//RESULT = new Expression(e1.address, e2.address, r);
+					RESULT = new Expression(e1,e2,r);
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 binary_op:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e);
+					RESULT = new Expression(e3,e4,e);
+					System.out.println(RESULT.toString());
+				:};			
+
+unary_exp ::= primary_expr:p1
+				{:
+					System.out.println("Unary primary exp");
+					RESULT = p1;
+				:}
+				|
+				MINUS unary_exp:u1
+				{:
+					System.out.println("- unary_exp");
+					RESULT = " - " + u1;
+				:}
+				|
+				ASTRISK unary_exp:u2
+				{:
+					System.out.println("* unary_exp");
+					RESULT = " * " + u2;
+				:}
+				|
+				EXCLAMATION unary_exp:u3
+				{:
+					System.out.println("! unary_exp");
+					RESULT = " ! " + u3;
+				:};
+
+var_decl ::= VAR var_spec:vs 
+			{:
+				System.out.println("var decl");
+				RESULT = vs;
+			:}
+			|
+			VAR OPEN_PARAN var_spec_semi CLOSE_PARAN
+			{:
+				System.out.println("var declaration var var spec");
+			:};
+	
+				
+var_spec_semi ::= 	var_spec SEMI_COLON var_spec_semi
+					{:
+						System.out.println("var spec helepr");
+					:}
+					|
+					{::};
+
+
+var_spec ::= IDENTIFIER type  
+			{:
+				System.out.println("var spec ----> Identifier type");				
+			:}
+			|
+			IDENTIFIER type EQUAL expression
+			{:
+				System.out.println("var spec ----> identifier type equal expression");
+			:}
+			|
+			IDENTIFIER:d EQUAL expression:e1
+			{:
+				System.out.println("var spec ---->ident equal expression");
+				System.out.println(d + " = " + e1.address);
+				//System.out.println(d + " = " + e1);
+				RESULT = e1.code + "\n" + d +  " = " + e1.address;
+				System.out.println("===========VARSPECC===========");
+				System.out.println(RESULT);
+				System.out.println("======================");
+			:};
+
+
+
+short_var_decl ::= identifier_list:d COLON_EQUAL expression:e 
+					{:	
+						System.out.println("===============SHORT=======================");
+						System.out.println("short var decl ----> identifier_list := expression");
+						RESULT = new Expression(e.address);
+						System.out.println(d + " = " + RESULT.address);	
+						System.out.println(e.address);
+						System.out.println("======================================");
+					:};
+
+
+function_decl ::= FUNC function_name function 
+					{:
+						System.out.println("function_decl ----> FUNC function_name fucntion");
+					:}
+					|
+					FUNC function_name signature
+					{:
+						System.out.println("function_decl ----> FUNC function_name signature");
+					:};
+					
+function_name ::= IDENTIFIER
+					{:
+						System.out.println("function_name ----> Identifier");
+					:};
+
+function ::= signature function_body:body
+			{:
+				System.out.println("function ----> signature function_body");
+				RESULT = new Function(body);
+				System.out.println("BEGIN");
+				System.out.println(RESULT.body);
+				System.out.println("END");
+
+			:};
+function_body ::= 	block:b
+					{:
+					System.out.println("END FUNC:");
+					System.out.println("function_body ----> block");
+					RESULT = b;
+					System.out.println("========================BLOCK========================");
+					System.out.println(b);
+					System.out.println("================================================");
+					:};
+
+
+method_decl ::= FUNC receiver method_name function 
+				{:
+					System.out.println("method_decl ----> FUNC receiver method_name function");
+				:}
+				|
+				FUNC receiver method_name signature
+				{:
+					System.out.println("function_decl ----> FUNC receiver method_name signature");
+				:};
+receiver ::= parameters
+			{:
+				System.out.println("receiver ----> parameters");
+			:};
+
+operand ::= literal:lit
+			{:
+				System.out.println("operand ------> literal");
+				RESULT = lit;
+			:}
+			| 
+			operand_name:op_name
+			{:
+				System.out.println("operand ------> operand name");
+				RESULT = op_name;
+			:}
+			|
+			OPEN_PARAN expression:e CLOSE_PARAN
+			{:	
+			System.out.println("operand ------> ( expression )");
+			RESULT =  e.address;
+			:};
+
+literal ::= basic_lit:basiclit
+			{:
+				System.out.println("Literal ------> basic lit");
+				RESULT = basiclit;
+			:}
+			|
+			function_lit
+			{:
+				System.out.println("Literal ------> function lit");
+			:};
+basic_lit ::= 	INT_LIT:i
+				{:
+					RESULT = i;
+				:}
+				|
+				STRING_LIT:string_lit
+				{:
+					RESULT = string_lit ;
+				:};
+
+
+operand_name ::= IDENTIFIER:id
+				{:
+					System.out.println("operand name ----> identifier");
+					RESULT = id;
+				:}
+				|
+				qualified_ident
+				{:
+					System.out.println("operand name ----> qualified ident");
+				:};
+
+qualified_ident ::= DOT package_name DOT IDENTIFIER
+				{:
+					System.out.println("qualified ident ----> . package name . identifier");
+				:};					
+					
+function_lit ::= FUNC function
+					{:
+						System.out.println("function lit ----> FUNC function");
+					:}; 
+					
+primary_expr ::= operand:op
+				{:
+					System.out.println("Primary expression -----> operand");
+					RESULT = op;
+				:}
+				|
+				primary_expr selector 
+				{:
+					System.out.println("Primary expression -----> selector");
+				:}
+				|
+				primary_expr arguments 
+				{:
+					System.out.println("Primary expression -----> arguments");
+				:};
+selector ::= DOT IDENTIFIER
+			{:
+				System.out.println(" selector -----> . identifier");
+			:};
+
+arguments ::= 
+			OPEN_PARAN  expression_list CLOSE_PARAN
+			{:
+				System.out.println("arguments -----> ( expression_list )");
+			:}
+			|
+			OPEN_PARAN CLOSE_PARAN
+			{:
+				System.out.println("Primary expression -----> ( )");
+			:};
+statement ::= declaration:d 
+			{:
+				System.out.println(" statement -----> declaration");
+				RESULT = d;
+			:}
+			|
+			simple_stmt SEMI_COLON 
+			{:
+				System.out.println("stmt -----> simple_stmt;");
+			:}
+			|
+			return_stmt SEMI_COLON
+			{:
+				System.out.println(" statement -----> return_stmt ;");
+			:}
+			|
+			break_stmt SEMI_COLON
+			{:
+				System.out.println(" statement -----> break stmt ;");
+			:}
+			|
+			block SEMI_COLON
+			{:
+				System.out.println("statement ----->  block  ;");
+			:}
+			|
+			block 
+			{:
+				System.out.println("statement ----->  block  ");
+			:}
+			|
+			if_stmt SEMI_COLON
+			{:
+				System.out.println("statement ----->  if_stmt  ;");
+			:}
+			|
+			if_stmt 
+			{:
+				System.out.println("statement ----->  if_stmt");
+			:}
+			|
+			switch_stmt SEMI_COLON
+			{:
+				System.out.println("statement ----->  switch_stmt  ;");
+			:}
+			|
+			switch_stmt 
+			{:
+				System.out.println("statement ----->  switch_stmt");
+			:}
+			|
+			for_stmt SEMI_COLON
+			{:
+				System.out.println("statement ----->  for_stmt  ;");
+			:}
+			|
+			for_stmt
+			{:
+				System.out.println("statement ----->  for_stmt");
+			:};
+simple_stmt ::= expression_stmt
+			{:
+				System.out.println("simple_stmt ----->  expression_stmt");
+			:}
+			|
+			inc_dec_stmt
+			{:
+				System.out.println("simple_stmt ----->  inc_dec_stmt");
+			:}
+			|
+			assignment
+			{:
+				System.out.println("simple_stmt ----->  assignment");
+			:}
+			|
+			short_var_decl
+			{:
+				System.out.println("simple_stmt ----->  short_var_decl");
+			:};
+expression_stmt ::= expression
+					{:
+						System.out.println("expression_stmt ----->  expression");
+					:};
+inc_dec_stmt ::= expression INCREMENT 
+			{:
+				System.out.println("inc_dec_stmt ----->  expression INCREMENT");
+			:}
+			|
+			expression DECREMENT
+			{:
+				System.out.println("inc_dec_stmt ----->  expression DECREMENT");
+			:};
+
+assignment ::= expression_list assign_op EQUAL expression_list
+			{:
+				System.out.println("assignment ----->  expression_list assign_op EQUAL expression_list");
+			:}
+			|
+			expression_list EQUAL expression_list
+			{:
+				System.out.println("assignment ----->  expression_list EQUAL expression_list");
+			:}
+			;
+binary_op ::= assign_op:a {: RESULT = a;:} | PERCENT {::} | AMBERSAND{::} | EXCLAMATION {::} | AND_OP {::} | OR_OP{::};
+assign_op ::= 
+			PLUS
+			{:
+				System.out.println("+++++");
+				RESULT = "+";
+			:}
+			 %prec ASTRISK
+			|
+			MINUS
+			{:
+				System.out.println("-----");
+				RESULT = "-";
+			:}
+			%prec ASTRISK
+			|
+			ASTRISK
+			{:
+				System.out.println("*****");
+				RESULT = "*";
+			:}
+			|
+			SLASH
+			{:
+
+				RESULT = "/";
+			:}
+			|
+			SHIFT_LEFT
+			{:
+				RESULT = "<<";
+			:}
+			|
+			SHIFT_RIGHT
+			{:
+				RESULT = ">>";
+			:};
+
+if_stmt ::= IF simple_stmt SEMI_COLON expression block ELSE if_stmt
+			{:
+				System.out.println("if_stmt ----->  IF simple_stmt SEMI_COLON expression block ELSE if_stmt");
+			:}
+			|
+			IF simple_stmt SEMI_COLON expression block ELSE block
+			{:
+				System.out.println("if_stmt ----->  IF simple_stmt SEMI_COLON expression block ELSE block");
+			:}
+			|
+			IF expression block ELSE if_stmt
+			{:
+			:}
+			|
+			IF expression block ELSE block
+			{:
+			:}
+			|
+			IF simple_stmt SEMI_COLON expression block 
+			{:
+			:}
+			|
+			IF expression block 
+			{:
+			:};
+switch_stmt ::= expr_switch_stmt
+				{:
+				:};	
+expr_switch_stmt ::= SWITCH simple_stmt SEMI_COLON expression  OPEN_CURLY expr_case_clause_more CLOSE_CURLY
+		{:
+		:}
+		|
+		SWITCH  OPEN_CURLY expr_case_clause_more CLOSE_CURLY
+		{:
+		:}
+		|
+		SWITCH simple_stmt SEMI_COLON   OPEN_CURLY expr_case_clause_more CLOSE_CURLY
+		{:
+		:}
+		|
+		SWITCH  expression  OPEN_CURLY expr_case_clause_more CLOSE_CURLY
+		{:
+		:};
+expr_case_clause_more ::= expr_case_clause expr_case_clause_more
+						{::}
+						|
+						{::};
+expr_case_clause ::= expr_switch_case COLON statement_list
+				{:
+				:};
+expr_switch_case ::= CASE expression_list 
+						{:
+						:}
+						|
+						DEFAULT
+						{:
+						:};
+			
+for_stmt ::= FOR for_clause block
+			{:
+			:};	
+	
+for_clause ::= init_stmt SEMI_COLON condition SEMI_COLON post_stmt
+			{:
+			:};
+			
+condition ::= expression	
+			{:
+			:};
+init_stmt ::= simple_stmt
+			{:
+			:};
+			
+post_stmt ::= simple_stmt
+			{:
+			:};
+return_stmt ::= RETURN expression_list
+				{:
+				:}
+				|
+				RETURN
+				{:
+				:};
+break_stmt ::= BREAK
+				{:
+				:};
+
+package_clause ::= PACKAGE package_name
+					{:
+					:};
+
+package_name ::= IDENTIFIER 
+				{:
+				:};
+import_dec_semi ::= import_decl SEMI_COLON import_dec_semi
+					{:
+					:}
+					|
+					import_decl import_dec_semi
+					{:
+					:}
+					|
+					{::};
+					
+import_decl ::= IMPORT import_spec 
+				{:
+				:}
+				|
+				IMPORT OPEN_PARAN import_spec_semi CLOSE_PARAN
+				{:
+				:};
+				
+import_spec_semi ::= import_spec SEMI_COLON import_spec_semi
+					{:
+					:}
+					|
+					import_spec import_spec_semi
+					{::}
+					|
+					{::};
+
+import_spec ::= DOT import_path
+				{:
+				:}
+				|
+				package_name import_path
+				{:
+				
+				:}
+				|
+				import_path
+				{:
+				:};
+
+
+import_path ::= STRING_LIT
+				{:
+				:};		

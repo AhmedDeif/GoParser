@@ -1,0 +1,1066 @@
+import java.io.*;
+import java_cup.runtime.*;
+
+
+
+/*
+parser code {:
+	
+
+:};
+*/
+action code {:
+ int temp =0 ;
+ int label = 0;
+:};
+/* Terminals (tokens returned by the scanner). */
+terminal String IDENTIFIER, BREAK, DEFAULT, FUNC, CASE, ELSE,
+					PACKAGE, SWITCH, CONST, IF, FOR, IMPORT, RETURN, VAR, REL_OP, AND_OP, OR_OP, PLUS, MINUS, STRING_LIT,
+					OPEN_PARAN, CLOSE_PARAN, OPEN_CURLY, CLOSE_CURLY,
+					 SEMI_COLON, COMMA, DOT, COLON, COLON_EQUAL,
+					EQUAL, CDOTS, ASTRISK, SHIFT_LEFT, SHIFT_RIGHT, SLASH,
+					EXCLAMATION, AMBERSAND, PERCENT, INCREMENT, DECREMENT,INT_LIT;	
+/* Non-terminals */
+nonterminal String type,type_name,type_lit,function_type,short_var_decl,
+identifier_list,signature,result,
+parameters,parameter_list,method_name,block,statement_list,statement,
+declaration, const_decl,var_decl,top_level_decl,const_spec_semi, const_spec,
+id_list,var_spec, var_spec_semi, function_decl,
+function_name, function_body,method_decl, receiver, operand, param_dec,  paramater_decl, express_comma, operand_name,
+ function_lit,qualified_ident,
+primary_expr,selector , arguments , simple_stmt, 
+return_stmt, break_stmt , if_stmt, switch_stmt, for_stmt, assign_op ,expr_switch_stmt,expr_case_clause_more,expr_case_clause,expr_switch_case,
+condition,for_clause,
+init_stmt,post_stmt,import_path,package_name,
+import_spec,import_spec_semi,import_decl,package_clause,import_dec_semi,
+top_level_decl_more ,source_file, expression_stmt,
+inc_dec_stmt, assignment,unary_exp,expression_list,literal,basic_lit;
+
+nonterminal Expression expression;
+nonterminal  function;
+
+precedence left SEMI_COLON;
+precedence left COMMA;
+precedence left OPEN_PARAN;
+precedence left AND_OP, OR_OP;
+precedence left REL_OP;
+precedence left PLUS,MINUS;
+precedence left ASTRISK,PERCENT, SLASH, SHIFT_LEFT, SHIFT_RIGHT, AMBERSAND, DOT,EXCLAMATION;
+
+start with source_file;
+
+/* The grammar */
+source_file ::= package_clause:pc SEMI_COLON import_dec_semi:impdec top_level_decl_more:topmore
+				{:
+					System.out.println("source ;");
+					RESULT = topmore;
+					RESULT = RESULT.replaceAll("(?m)^[ \t]*\r?\n", "");
+
+
+				:}
+				|
+				package_clause:pc import_dec_semi:im top_level_decl_more:top
+				{:
+					System.out.println("source import");
+					RESULT = top;
+					RESULT = RESULT.replaceAll("(?m)^[ \t]*\r?\n", "");
+
+				
+				:};
+type ::= 	type_name
+			{:
+				System.out.println("type type name");
+			:}
+			|
+			type_lit
+			{:
+			System.out.println("type type lit");
+			:};
+
+type_name ::= IDENTIFIER
+			{:
+			System.out.println("type name");
+			:};
+			
+type_lit ::= function_type
+			{:
+			System.out.println("type lit");
+			:};
+function_type ::= FUNC signature
+			{:
+			System.out.println("func type");
+			:};
+signature ::= parameters result
+			{:
+				System.out.println("sign param res");
+			:}
+			|
+			parameters
+			{:
+				System.out.println("sign parameters");
+			:};
+result ::= parameters 
+			{:
+				System.out.println("res param");
+			:}
+			|
+			OPEN_PARAN type CLOSE_PARAN
+			{:
+				System.out.println("res (type)");
+			:};
+parameters ::= OPEN_PARAN parameter_list CLOSE_PARAN
+				{:
+					System.out.println("params (list)");
+				:}
+				|
+				OPEN_PARAN CLOSE_PARAN
+				{:
+					System.out.println("params ()");
+				:};
+parameter_list ::= paramater_decl param_dec	
+					{:
+						System.out.println("param_list");
+					:};
+param_dec ::=  COMMA paramater_decl param_dec
+				{:
+					System.out.println(" comma paramter declaration");
+				:}
+				|
+				{:
+				:};
+paramater_decl ::= identifier_list CDOTS type
+				{:
+					System.out.println("parameter declaration identifier list cdots type");
+				:}
+				|
+				identifier_list type
+				{:
+					System.out.println("parameter declaration identifier lsit type");
+				:};
+method_name ::= IDENTIFIER
+				{:
+					System.out.println(" method name identifier");
+				:};
+
+block ::= 	OPEN_CURLY statement_list:stl CLOSE_CURLY
+			{:
+				System.out.println("BEGIN FUNC:");
+				System.out.println(" block open curly statement list close curly");
+				RESULT = stl;
+			:};
+
+statement_list ::= statement:s statement_list:stl
+					{:
+						System.out.println(" statement list statement statement list");
+						if(stl.length() > 0){
+							RESULT = s + "\n" + stl ;
+						}
+						else {
+							RESULT = s + stl ;
+						}
+						System.err.println("=========================##############=================");
+						System.err.println(s);
+						System.err.println("=========================##############=================");
+
+					:}
+					|
+					{:
+						RESULT = "";
+					:};
+declaration ::= const_decl:cd SEMI_COLON
+				{:
+					System.out.println(" declaration constant declaration semi colon");
+					RESULT = cd;
+				:}
+				|
+				var_decl:vd SEMI_COLON
+				{:
+					System.out.println(" declaration var declaration semi colon");
+					RESULT = vd;
+				:};
+				
+top_level_decl ::= declaration:dec
+					{:
+						System.out.println("top level decl");
+						RESULT = dec;
+					:}
+					|
+					function_decl:fl SEMI_COLON
+					{:
+						System.out.println(" top level declaration function_declaration semi colon");
+						RESULT = fl;
+					:}
+					|
+					function_decl:fl
+					{:
+						System.out.println(" top level declaration function declaration");
+						RESULT = fl;
+					:}
+					|
+					method_decl SEMI_COLON
+					{:
+						System.out.println(" top level declaration method_declaration semi colon");
+					:}
+					|
+					method_decl 
+					{:
+						System.out.println(" top level declaration method_declaration");
+					:};
+top_level_decl_more ::= top_level_decl:top top_level_decl_more:topmore
+						{:
+							System.out.println(" top level declaration helper");
+							RESULT = top +"\n"+ topmore;
+						:}
+						|
+						{:
+							RESULT = "";
+						:};
+											
+const_decl ::= CONST const_spec:cs
+				{:
+					System.out.println(" constant declaration const sonst spec");
+					RESULT = cs;
+				:}
+				|
+				CONST OPEN_PARAN const_spec_semi CLOSE_PARAN
+				{:
+					System.out.println(" constant declaration const ( const spec )");
+				:};
+				
+const_spec_semi ::= const_spec SEMI_COLON const_spec_semi
+					{:
+						System.out.println(" constant spec helper");
+					:}
+					|
+					{:
+					:};
+const_spec ::= 	IDENTIFIER:d type EQUAL expression:e 
+				{:
+					e.address = e.address.replace("&","");
+					e.code = e.code.replace("&","");
+					System.out.println("constant spec identifier type = expression");
+					System.out.println(d + " = " + e.address);
+					RESULT = d + " = " + e.address;
+				:}
+				|
+				IDENTIFIER:d  EQUAL expression:e
+				{:
+					e.address = e.address.replace("&","");
+					e.code = e.code.replace("&","");
+					System.out.println("constant spec identifier = expression");
+					System.out.println(d + " = " + e.address);
+					RESULT = d + " = " + e.address;
+				:}
+				|
+				IDENTIFIER:id
+				{:
+					System.out.println("constant spec identifier");
+					RESULT = id;
+				:};
+identifier_list ::= IDENTIFIER:d id_list:idList
+					{:
+						System.out.println(" identitifer list identifier");
+						RESULT = d +  idList;
+					:};
+					
+id_list ::= COMMA IDENTIFIER:d id_list:idList 
+			{:
+				System.out.println(" id list comma identifier id list");
+				RESULT = "," + d + idList; 
+			:}
+			|
+			{:
+				RESULT = "";
+			:};
+expression_list ::= expression:e express_comma:ec
+					{:
+						System.out.println(" expression list expression express_comma ");
+						RESULT = e + ec;
+						System.err.println("EXPRESSION LIST ==>>>" + e.address+"###");
+						System.err.println("EXPRESSION LIST ==>>>" + e.code+"###");
+
+						System.err.println(RESULT+"###");
+					:};
+
+
+express_comma ::= COMMA expression:e express_comma:ec
+				{:
+					System.out.println(" comma expression helper");
+					RESULT = "$" + e + ec;
+					System.err.println(RESULT+"###");
+				:}
+				|
+				{:
+					RESULT = "";
+					System.out.println(RESULT);
+				:};
+
+
+expression ::= unary_exp:u_exp
+				{:
+					System.out.println("EXPRESSION Unary" + u_exp);
+					System.err.println("unary_exp not implemented yet.....");					
+					if(u_exp.contains("$$$$")){
+						String arr[] = u_exp.split("\\$\\$\\$\\$");
+						String addr = arr[1];
+						String code = arr[0];
+						RESULT = new Expression(addr);
+						RESULT.code = code;
+					}
+					else 
+					{
+						System.err.println("UNARY ==>  " + u_exp);
+
+						RESULT = new Expression(u_exp);
+						System.err.println("ELLSEEEEEE " + RESULT);
+						//System.err.println("ELLSEEEEEE " + );
+
+					}
+
+					System.err.println("##############==========" + RESULT);
+				:}
+				|
+				expression:e1 REL_OP:r expression:e2
+				{:
+					System.out.println("EXPRESSION Rel op");
+					//RESULT = new Expression(e1.address, e2.address, r,temp);
+					RESULT = new Expression(e1,e2,r,temp);
+					temp ++;
+					System.out.println("Expression ==> "+RESULT.address + " $$ " + RESULT.code);
+				:}
+				|
+				expression:e3 PLUS:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"+",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 MINUS:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, "-",temp);
+
+					RESULT = new Expression(e3,e4,"-",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 ASTRISK:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"*",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 SHIFT_RIGHT:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,">>",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 SHIFT_LEFT:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"<<",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 AMBERSAND:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"&",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 AND_OP:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"&&",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 OR_OP:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"||",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 EXCLAMATION:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"!",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 PERCENT:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"%",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:}
+				|
+				expression:e3 SLASH:e expression:e4
+				{:
+					System.out.println("EXPRESSION  ( " + e3.address + "  "+ e +" " + e4.address+ " ) op");
+					//RESULT = new Expression(e3.address, e4.address, e,temp);
+
+					RESULT = new Expression(e3,e4,"/",temp);
+					temp ++;
+					System.out.println(RESULT.toString());
+				:};			
+
+unary_exp ::= primary_expr:p1
+				{:
+					System.out.println("Unary primary exp");
+					RESULT = p1;
+				:}
+				|
+				MINUS unary_exp:u1
+				{:
+					System.out.println("- unary_exp");
+					RESULT = " - " + u1;
+				:}
+				|
+				ASTRISK unary_exp:u2
+				{:
+					System.out.println("* unary_exp");
+					RESULT = " * " + u2;
+				:}
+				|
+				EXCLAMATION unary_exp:u3
+				{:
+					System.out.println("! unary_exp");
+					RESULT = " ! " + u3;
+				:};
+
+var_decl ::= VAR var_spec:vs 
+			{:
+				System.out.println("var decl");
+				RESULT = vs;
+			:}
+			|
+			VAR OPEN_PARAN var_spec_semi CLOSE_PARAN
+			{:
+				System.out.println("var declaration var var spec");
+			:};
+	
+				
+var_spec_semi ::= 	var_spec SEMI_COLON var_spec_semi
+					{:
+						System.out.println("var spec helepr");
+					:}
+					|
+					{::};
+
+
+var_spec ::= IDENTIFIER type  
+			{:
+				System.out.println("var spec ----> Identifier type");				
+			:}
+			|
+			IDENTIFIER type EQUAL expression
+			{:
+				System.out.println("var spec ----> identifier type equal expression");
+			:}
+			|
+			IDENTIFIER:d EQUAL expression:e1
+			{:
+				e1.address = e1.address.replace("&","");
+				e1.code = e1.code.replace("&","");
+				System.out.println("var spec ---->ident equal expression");
+				System.out.println(d + " = " + e1.address);
+				//System.out.println(d + " = " + e1);
+				RESULT = e1.code + "\n" + d +  " = " + e1.address;
+				System.out.println("===========VARSPECC===========");
+				System.out.println(RESULT);
+				System.out.println("======================");
+			:};
+
+
+
+short_var_decl ::= identifier_list:d COLON_EQUAL expression:e 
+					{:	
+						e.address = e.address.replace("&","");
+						e.code = e.code.replace("&","");
+						System.out.println("===============SHORT=======================");
+						System.out.println("short var decl ----> identifier_list := expression");
+						//RESULT = new Expression(e.address);
+						//System.out.println(d + " = " + RESULT.address);	
+						//System.out.println(e.address);
+						//System.out.println(e.code);
+						if(e.address.contains("push_param")){
+							RESULT = e.address + "\n" + d + " = " +"t"+ (temp-1);
+						}
+						else{
+							if(e.code.equals("")){
+								RESULT = e.code + d + " = " +  e.address ;
+							}else{
+							RESULT = e.code + "\n"+  d + " = " +  e.address ;
+							}
+							
+						}
+						
+						System.out.println(RESULT);
+						System.out.println("======================================");
+					:};
+
+
+function_decl ::= FUNC function_name:fn function:f 
+					{:
+						System.out.println("function_decl ----> FUNC function_name fucntion");
+						System.out.println(fn + ":");
+						RESULT = fn + ":"+"\n"+"begin_func;" + "\n" + f +"\n" + "end_func;";
+						System.out.println("begin_func;");
+						System.out.println(f);
+						System.out.println("end_func;");
+					:}
+					|
+					FUNC function_name signature
+					{:
+						System.out.println("function_decl ----> FUNC function_name signature");
+						
+					:};
+					
+function_name ::= IDENTIFIER:id
+					{:
+						System.out.println("function_name ----> Identifier");
+						RESULT = id;
+						
+					:};
+
+function ::= signature function_body:body
+			{:
+				System.out.println("function ----> signature function_body");
+				RESULT = body;
+			:};
+function_body ::= 	block:b
+					{:
+					System.out.println("END FUNC:");
+					System.out.println("function_body ----> block");
+					RESULT = b;
+					System.out.println("========================BLOCK========================");
+					System.out.println(b);
+					System.out.println("================================================");
+					:};
+
+
+method_decl ::= FUNC receiver method_name function 
+				{:
+					System.out.println("method_decl ----> FUNC receiver method_name function");
+				:}
+				|
+				FUNC receiver method_name signature
+				{:
+					System.out.println("function_decl ----> FUNC receiver method_name signature");
+				:};
+receiver ::= parameters
+			{:
+				System.out.println("receiver ----> parameters");
+			:};
+//	#here
+operand ::= literal:lit
+			{:
+				System.out.println("operand ------> literal");
+				RESULT = lit;
+			:}
+			| 
+			operand_name:op_name
+			{:
+				System.out.println("operand ------> operand name");
+				RESULT = op_name;
+			:}
+			|
+			OPEN_PARAN expression:e CLOSE_PARAN
+			{:	
+			System.out.println("operand ------> ( expression )");
+			RESULT =  e.code + "$$$$"  + e.address;
+			//RESULT =  e.address + "\n"  + e.code;
+			System.err.println(e.code);
+			System.err.println(e.address);
+			:};
+
+literal ::= basic_lit:basiclit
+			{:
+				System.out.println("Literal ------> basic lit");
+				RESULT = basiclit;
+			:}
+			|
+			function_lit
+			{:
+				System.out.println("Literal ------> function lit");
+			:};
+basic_lit ::= 	INT_LIT:i
+				{:
+					RESULT = i;
+				:}
+				|
+				STRING_LIT:string_lit
+				{:
+					RESULT = string_lit ;
+				:};
+
+
+operand_name ::= IDENTIFIER:id
+				{:
+					System.out.println("operand name ----> identifier");
+					RESULT = id;
+				:}
+				|
+				qualified_ident:qi
+				{:
+					System.out.println("operand name ----> qualified ident");
+					RESULT = qi;
+				:};
+
+qualified_ident ::= DOT package_name DOT IDENTIFIER:id
+				{:
+					System.out.println("qualified ident ----> . package name . identifier");
+					RESULT = id;
+					
+				:};					
+					
+function_lit ::= FUNC function
+					{:
+						System.out.println("function lit ----> FUNC function");
+					:}; 
+					
+primary_expr ::= operand:op
+				{:
+					System.out.println("Primary expression -----> operand");
+					RESULT = op;
+					System.out.println(RESULT + "#################");
+				:}
+				|
+				primary_expr selector 
+				{:
+					System.out.println("Primary expression -----> selector");
+				:}
+				|
+				primary_expr:pe arguments:a
+				{:
+					System.out.println("Primary expression -----> arguments");
+					String res = "";
+					String [] arr = a.split("\\$");
+					
+					for (int i = 0 ; i < arr.length;i++)
+					{
+						res += "push_params: " + arr[i] +"\n";
+					}
+					RESULT = res + "t" + temp + " = call " + pe +"\n" + "pop_params; ";
+					temp ++;
+					System.out.println("=================" + RESULT);
+
+				:};
+selector ::= DOT IDENTIFIER
+			{:
+				System.out.println(" selector -----> . identifier");
+			:};
+
+arguments ::= 
+			OPEN_PARAN  expression_list:el CLOSE_PARAN
+			{:
+				System.out.println("arguments -----> ( expression_list )");
+				RESULT = el;
+				//System.out.println("push_params:" + el);
+				
+
+			:}
+			|
+			OPEN_PARAN CLOSE_PARAN
+			{:
+				System.out.println("Primary expression -----> ( )");
+				RESULT = "";
+			:};
+statement ::= declaration:d 
+			{:
+				System.out.println(" statement -----> declaration");
+				RESULT = d;
+			:}
+			|
+			simple_stmt:st SEMI_COLON 
+			{:
+				System.out.println("stmt -----> simple_stmt;");
+				RESULT = st;
+
+			:}
+			|
+			return_stmt:rs SEMI_COLON
+			{:
+				System.out.println(" statement -----> return_stmt ;");
+				RESULT = rs;
+
+			:}
+			|
+			break_stmt SEMI_COLON
+			{:
+				System.out.println(" statement -----> break stmt ;");
+			:}
+			|
+			block SEMI_COLON
+			{:
+				System.out.println("statement ----->  block  ;");
+			:}
+			|
+			block 
+			{:
+				System.out.println("statement ----->  block  ");
+			:}
+			|
+			if_stmt:if_stmt_semi SEMI_COLON
+			{:
+				System.out.println("statement ----->  if_stmt  ;");
+				RESULT = if_stmt_semi;
+
+			:}
+			|
+			if_stmt:ifstmt 
+			{:
+				System.out.println("statement ----->  if_stmt");
+				RESULT = ifstmt;
+			:}
+			|
+			switch_stmt:sw SEMI_COLON
+			{:
+				System.out.println("statement ----->  switch_stmt  ;");
+				RESULT = sw;
+			:}
+			|
+			switch_stmt:s 
+			{:
+				System.out.println("statement ----->  switch_stmt");
+				RESULT = s;
+			:}
+			|
+			for_stmt SEMI_COLON
+			{:
+				System.out.println("statement ----->  for_stmt  ;");
+			:}
+			|
+			for_stmt
+			{:
+				System.out.println("statement ----->  for_stmt");
+			:};
+simple_stmt ::= expression_stmt:es
+			{:
+				System.out.println("simple_stmt ----->  expression_stmt");
+				RESULT = es;
+			:}
+			|
+			inc_dec_stmt:inc
+			{:
+				System.out.println("simple_stmt ----->  inc_dec_stmt");
+				RESULT = inc;
+			:}
+			|
+			assignment:assign
+			{:
+				System.out.println("simple_stmt ----->  assignment");
+				RESULT = assign +"\n" ;
+			:}
+			|
+			short_var_decl:short_var
+			{:
+				System.out.println("simple_stmt ----->  short_var_decl");
+				RESULT = short_var + "\n";
+			:};
+expression_stmt ::= expression:e
+					{:
+						System.out.println("expression_stmt ----->  expression");
+						e.code = e.code.replace("&","");
+						e.address = e.address.replace("&","");
+						RESULT = e.toString();
+						System.out.println("EXPRESSION STMT ==> " + RESULT);
+					:};
+inc_dec_stmt ::= expression INCREMENT 
+			{:
+				System.out.println("inc_dec_stmt ----->  expression INCREMENT");
+			:}
+			|
+			expression DECREMENT
+			{:
+				System.out.println("inc_dec_stmt ----->  expression DECREMENT");
+			:};
+
+assignment ::= expression_list:el assign_op:aop EQUAL expression_list:el2
+			{:
+				System.out.println("assignment ----->  expression_list assign_op EQUAL expression_list");
+				RESULT = el + aop + "=" + el2;
+				el.replace("&", "");
+			:}
+			|
+			expression_list:el EQUAL expression_list:el2
+			{:
+				System.out.println("assignment ----->  expression_list EQUAL expression_list");
+				String arr[] = el2.split("&");
+				
+				arr[0].replace("&", "");
+				el.replace("&", "");
+				
+				RESULT = arr[1]+ "\n" +el +" = "+ arr[0] + "\n";
+				//RESULT = el +" = "+ el2 + "\n";
+				System.out.println("ASSIGNMENT ======>>>>>" + el);
+				System.out.println("ASSIGNMENT ======>>>>>" + el2);
+				System.out.println("ASSIGNMENT ======>>>>>" + RESULT);
+			:}
+			;
+
+assign_op ::= 
+			PLUS
+			{:
+				System.out.println("+++++");
+				RESULT = "+";
+			:}
+			|
+			MINUS
+			{:
+				System.out.println("-----");
+				RESULT = "-";
+			:}
+			|
+			ASTRISK
+			{:
+				System.out.println("*****");
+				RESULT = "*";
+			:}
+			|
+			SLASH
+			{:
+
+				RESULT = "/";
+			:}
+			|
+			SHIFT_LEFT
+			{:
+				RESULT = "<<";
+			:}
+			|
+			SHIFT_RIGHT
+			{:
+				RESULT = ">>";
+			:};
+
+if_stmt ::= IF simple_stmt:ss SEMI_COLON expression:e block:b1 ELSE if_stmt:ifs
+			{:
+				e.code = e.code.replace("&","");
+				e.address = e.address.replace("&","");
+				ss.replace("&","");
+				System.out.println("if_stmt ----->  IF simple_stmt SEMI_COLON expression block ELSE if_stmt");
+
+				RESULT = ss +"\n"+e.code+ "\nIF " + e.address +" GoTO L" + label + "\n" +"GoTO L" + (label = label + 1)+"\n"+
+				"L" + (label - 1) +":\n" + b1 +"\n"+ "GoTO LL" + (label - 1)  +  "\n" +"L"+label +":\n" + ifs +"LL"+ (label - 1)+":\n" ;
+				label = label +1;
+			:}
+			|
+			IF simple_stmt:ss SEMI_COLON expression:e block:b1 ELSE block:b2
+			{:
+				e.code = e.code.replace("&","");
+				e.address = e.address.replace("&","");
+				ss.replace("&","");
+				System.out.println("if_stmt ----->  IF simple_stmt SEMI_COLON expression block ELSE block");
+				RESULT = ss +"\n"+e.code+"\nIF" + e.address +" GoTO L" + label + "\n" +"GoTO L" + (label = label + 1)+"\n"+
+				"L" + (label - 1) +":\n" + b1 +"\n"+ "GoTO LL" + (label - 1)  +  "\n" +"L"+label +":\n" + b2 +"\nLL"+ (label - 1)+":\n" ;
+				label = label +1;
+
+			:}
+			|
+			IF expression:e block:b1 ELSE if_stmt:ifs
+			{:
+				e.code = e.code.replace("&","");
+				e.address = e.address.replace("&","");
+				System.out.println("if_stmt ----->  IF expression block ELSE if_stmt");
+				RESULT = e.code +"\n"+ "IF " + e.address + " GoTO L" + label + "\n" +"GoTO L" + (label = label + 1) + "\n" 
+				+ "L" + (label - 1) +":\n" + b1 +"\n"+ "GoTO LL" + (label - 1) +  "\n" +"L"+label +":\n"+ ifs + "LL"+(label - 1)+":\n";
+				label = label +1;
+			:}
+			|
+			IF expression:e block:b1 ELSE block:b2
+			{:
+				e.code = e.code.replace("&","");
+				e.address = e.address.replace("&","");
+				System.out.println("if_stmt -----> IF expression block ELSE block" + e.toString());
+
+				RESULT = e.code +"\n"+ "IF " + e.address + " GoTO L" + label + "\n" +"GoTO L" + (label = label + 1) + "\n" 
+				+ "L" + (label - 1) +":\n" + b1 +"\n"+ "GoTO LL" + (label - 1) +  "\n" +"L"+label +":\n"+ b2 + "\n" + "LL"+(label - 1)+":\n";
+				label = label +1;
+				System.out.println(RESULT + "********************");
+			:}
+			|
+			IF simple_stmt:ss SEMI_COLON expression:e block:b1 
+			{:
+				e.code = e.code.replace("&","");
+				e.address = e.address.replace("&","");
+				ss.replace("&","");
+				System.out.println("if_stmt -----> IF simple_stmt SEMI_COLON expression block ");
+				RESULT = ss +"\n"+e.code+ "\nIF" + e.address +" GoTO L" + label + "\n" +"GoTO L" + (label = label + 1)+"\n"+
+				"L" + (label - 1) +":\n" + b1 + "\n" +"L"+label +":\n" ;
+				label = label +1;
+			:}
+			|
+			IF expression:e block:b1 
+			{:
+				e.code = e.code.replace("&","");
+				e.address = e.address.replace("&","");
+				System.out.println("if_stmt -----> IF simple_stmt SEMI_COLON expression block ");
+
+				RESULT = e.code+"\nIF " + e.address + " GoTO L" +label+ "\n" +"GoTO L"+ (label = label + 1) + "\n"+ 
+				"L" + (label - 1) +":\n" + b1 + "\n" + "L"+label+":\n" ;
+				label = label +1;
+			:};
+
+switch_stmt ::= expr_switch_stmt:exp_switch
+				{:
+					RESULT = exp_switch;
+				:};	
+expr_switch_stmt ::= SWITCH simple_stmt:ss SEMI_COLON expression:e  OPEN_CURLY expr_case_clause_more:e_more CLOSE_CURLY
+		{:
+			System.out.println("SWITCH simple_stmt SEMI_COLON expression  OPEN_CURLY expr_case_clause_more CLOSE_CURLY");
+
+			RESULT = ss + e +e_more;
+		:}
+		|
+		SWITCH  OPEN_CURLY expr_case_clause_more CLOSE_CURLY
+		{:
+			System.out.println("SWITCH  OPEN_CURLY expr_case_clause_more CLOSE_CURLY");
+		:}
+		|
+		SWITCH simple_stmt SEMI_COLON   OPEN_CURLY expr_case_clause_more CLOSE_CURLY
+		{:
+			System.out.println("SWITCH simple_stmt SEMI_COLON   OPEN_CURLY expr_case_clause_more CLOSE_CURLY");
+		:}
+		|
+		SWITCH  expression  OPEN_CURLY expr_case_clause_more CLOSE_CURLY
+		{:
+			System.out.println("SWITCH  expression  OPEN_CURLY expr_case_clause_more CLOSE_CURLY");
+		:};
+expr_case_clause_more ::= expr_case_clause:e expr_case_clause_more:em
+						{:
+							RESULT = e + em;
+						:}
+						|
+						{:
+							RESULT = "";
+						:};
+expr_case_clause ::= expr_switch_case COLON statement_list
+				{:
+				
+				:};
+expr_switch_case ::= CASE expression_list 
+						{:
+						:}
+						|
+						DEFAULT
+						{:
+						:};
+			
+for_stmt ::= FOR for_clause block
+			{:
+			:};	
+	
+for_clause ::= init_stmt SEMI_COLON condition SEMI_COLON post_stmt
+			{:
+			:};
+			
+condition ::= expression	
+			{:
+			:};
+init_stmt ::= simple_stmt
+			{:
+			:};
+			
+post_stmt ::= simple_stmt
+			{:
+			:};
+return_stmt ::= RETURN expression_list:d
+				{:
+					RESULT = "return " + d.replace("$",",");
+				:}
+				|
+				RETURN
+				{:
+					RESULT = "return";
+				:};
+break_stmt ::= BREAK
+				{:
+				:};
+
+package_clause ::= PACKAGE package_name:pn
+					{:
+					:};
+
+package_name ::= IDENTIFIER 
+				{:
+				:};
+import_dec_semi ::= import_decl SEMI_COLON import_dec_semi
+					{:
+					:}
+					|
+					import_decl import_dec_semi
+					{:
+					:}
+					|
+					{::};
+					
+import_decl ::= IMPORT import_spec 
+				{:
+				:}
+				|
+				IMPORT OPEN_PARAN import_spec_semi CLOSE_PARAN
+				{:
+				:};
+				
+import_spec_semi ::= import_spec SEMI_COLON import_spec_semi
+					{:
+					:}
+					|
+					import_spec import_spec_semi
+					{::}
+					|
+					{::};
+
+import_spec ::= DOT import_path
+				{:
+				:}
+				|
+				package_name import_path
+				{:
+				
+				:}
+				|
+				import_path
+				{:
+				:};
+
+
+import_path ::= STRING_LIT
+				{:
+				:};		

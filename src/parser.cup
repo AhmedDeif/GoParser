@@ -1,0 +1,885 @@
+import java.io.*;
+import java_cup.runtime.*;
+
+
+action code {:
+	int tempCounter = 0 ;
+	int JumpLabels = 0;
+:};
+
+
+/* Terminals (tokens returned by the scanner). */
+terminal	String	BREAK, DEFAULT, FUNC, CASE, ELSE, PACKAGE, SWITCH, CONST, IF,
+					FOR, IMPORT, RETURN, VAR, OR_OP, AND_OP, PLUS, MINUS, OPEN_PARAN,
+					CLOSE_PARAN, OPEN_CURLY, CLOSE_CURLY,
+					SEMI_COLON, COMMA, DOT, COLON, COLON_EQUAL, EQUAL, CDOTS, ASTRISK,
+					SHIFT_LEFT, SHIFT_RIGHT, SLASH, EXCLAMATION, AMBERSAND,
+					PERCENT, INCREMENT, DECREMENT, IDENTIFIER, REL_OP, STRING_LIT, INT_LIT;
+
+/* Non-terminals */
+nonterminal String	sourceFile, packageClause, importDecls, importDecl, topLevelDecls,
+					topLevelDecl, packageName, importSpecs, importSpec, importPath,
+					optionalSemiColon, declaration, functionDecl, methodDecl,
+					constDecl, varDecl, constSpecs, constSpec, identifierList,
+					expressionList, primaryExpr,unaryExpr, mulOp, operand, selector,
+					arguments, literal, operandName, methodExpr, basicLit, functionLit,
+					qualifiedIdent, function, signature, functionBody, parameters, result,
+					type, parameterList, parameterDecl, block, statementList, statement,
+					typeName, typeLit,functionType,
+					varSpecs, varSpec, shortVarDecl, functionName,
+					methodName, receiver, receiverType, simpleStmt, returnStmt, breakStmt,
+					ifStmt, switchStmt, forStmt, expressionStmt, incDecStmt, assignment,
+					assignOp, exprSwitchStmt, initStmt, postStmt, condition, forClause,
+					exprCaseClauses, exprCaseClause,exprSwitchCase;
+nonterminal Expression expression;
+
+precedence left SEMI_COLON;
+precedence left COMMA;
+precedence left OPEN_PARAN;
+precedence left AND_OP, OR_OP;
+precedence left REL_OP;
+precedence left PLUS,MINUS;
+precedence left ASTRISK,PERCENT, SLASH, SHIFT_LEFT, SHIFT_RIGHT, AMBERSAND, DOT,EXCLAMATION;
+
+start with sourceFile;
+
+/* The grammar */
+sourceFile	::=	packageClause optionalSemiColon importDecls topLevelDecls
+				{:
+					System.out.println("source");
+				:}
+				| packageClause optionalSemiColon importDecls
+				{:
+					System.out.println("source");
+				:};
+
+topLevelDecls	::=	topLevelDecl topLevelDecls
+					{:
+					:}
+					| topLevelDecl
+					{:
+					:};
+
+topLevelDecl	::=	declaration:decl
+					{:
+						System.out.println(decl);
+					:}
+					| functionDecl optionalSemiColon
+					{:
+					:}
+					| methodDecl optionalSemiColon
+					{:
+					:};
+
+declaration	::=	constDecl:constDeclLabel SEMI_COLON
+				{:
+					RESULT = constDeclLabel;
+				:}
+				| varDecl:varDeclLabel SEMI_COLON
+				{:
+					RESULT = varDeclLabel;
+				:};
+
+constDecl	::=	CONST constSpec:constSpecLabel
+				{:
+					RESULT = constSpecLabel;
+				:}
+				| CONST OPEN_PARAN constSpecs CLOSE_PARAN
+				{:
+				:}
+				| CONST OPEN_PARAN CLOSE_PARAN
+				{:
+				:};
+
+
+constSpecs	::=	constSpec SEMI_COLON constSpecs
+				{:
+				:}
+				| constSpec SEMI_COLON
+				{:
+				:};
+
+constSpec	::=	IDENTIFIER:lexical
+				{:
+					RESULT = lexical;
+				:}
+				| IDENTIFIER:lexical EQUAL expression:expr
+				{:
+					RESULT = lexical + " = " + expr.addr + "\n" + expr.code;
+					System.out.println("================constSpec===============");
+				:}
+				| IDENTIFIER:lexical type EQUAL expression:expr
+				{:
+					RESULT = lexical + " = " + expr.addr + "\n" + expr.code;
+					System.out.println(RESULT);
+					System.out.println("================constSpec===============");
+				:};
+
+
+statement	::=	declaration:declarationLABEL
+				{:
+					System.out.println("================declaration=================");
+					RESULT = declarationLABEL;
+					System.out.println("=================================");
+				:}
+				| simpleStmt:stmtLabel SEMI_COLON
+				{:
+					System.out.println("================simpleStmt=================");
+					RESULT = stmtLabel;
+					System.out.println(stmtLabel);
+					System.out.println("=================================");
+				:}
+				| returnStmt SEMI_COLON
+				{:
+				:}
+				| breakStmt SEMI_COLON
+				{:
+				:}
+				| block optionalSemiColon
+				{:
+					System.out.println("statement block");
+				:}
+				| ifStmt:ifst optionalSemiColon
+				{:
+					System.err.println("================simpleStmt=================");
+					System.err.println(ifst);
+					RESULT = ifst;
+
+				:}
+				| switchStmt optionalSemiColon
+				{:
+				:}
+				| forStmt optionalSemiColon
+				{:
+				:};
+
+
+simpleStmt	::= expressionStmt:expressionStmtLabel
+				{:
+					System.out.println("=============expressionStmt==============");
+					RESULT = expressionStmtLabel;
+					System.out.println("===========================");
+				:}
+				| incDecStmt
+				{:
+				:}
+				| assignment:assignmentLabel
+				{:
+					System.out.println("=============assignment==============");
+					RESULT = assignmentLabel;
+					System.out.println("===========================");
+				:}
+				| shortVarDecl:assignmentLabel
+				{:
+					System.out.println("=============shortVarDecl==============");
+					RESULT = assignmentLabel;
+					System.out.println("===========================");
+				:};
+
+
+expressionStmt	::= expression:expressionLabel
+					{:
+						System.out.println("=============expressionStmt=============");
+						RESULT = expressionLabel.toString();
+						System.out.println(expressionLabel);
+						System.out.println("===========================");
+					:};
+
+incDecStmt	::= expression INCREMENT
+				{:
+				:}
+				| expression DECREMENT
+				{:
+				:};
+
+
+assignment	::=	expressionList assignOp EQUAL expressionList
+				{:
+				:}
+				|
+				expressionList EQUAL expressionList
+				{:
+				:};
+
+
+ifStmt	::=	IF expression:expressionLabel block:blockLabel
+			{:
+				System.out.println("===========IF State==============");
+				expressionLabel.code = expressionLabel.code.replace("$$","");
+				expressionLabel.addr = expressionLabel.addr.replace("$$","");
+				String s = expressionLabel.code + "\nIf " + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
+				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "L" +  (JumpLabels+1) + ":\n";
+				JumpLabels++;
+				s = s.replace("\n\n", "\n");
+				System.out.println(s);
+				RESULT = s;
+				System.out.println("=========================");
+			:}
+			| IF simpleStmt:st SEMI_COLON expression:expressionLabel block:blockLabel
+			{:
+				System.out.println("===========IF simpleStmt SEMI_COLON block ELSE ifStmt==============");
+				expressionLabel.code = expressionLabel.code.replace("$$","");
+				expressionLabel.addr = expressionLabel.addr.replace("$$","");
+				String s = st + expressionLabel.code + "\nIf " + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
+				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "L" +(JumpLabels+1)+":\n" ;
+				JumpLabels++;
+				s = s.replace("\n\n", "\n");
+				System.out.println(s);
+				RESULT = s;
+				System.out.println("=========================");
+			:}
+			| IF expression:expressionLabel block:blockLabel ELSE ifStmt:ifst
+			{:
+				expressionLabel.code = expressionLabel.code.replace("$$","");
+				expressionLabel.addr = expressionLabel.addr.replace("$$","");
+				String s = expressionLabel.code + "\nIf " + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
+				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "L" +  (JumpLabels+1) + ":\n" + ifst;
+				JumpLabels++;
+				System.out.println("===========IF expression block ELSE ifStmt==============");
+				s = s.replace("\n\n", "\n");
+				System.out.println(s);
+				RESULT = s;
+				System.out.println("=========================");
+			:}
+			| IF expression:expressionLabel block:blockLabel ELSE block:secondBlock
+			{:
+				expressionLabel.code = expressionLabel.code.replace("$$","");
+				expressionLabel.addr = expressionLabel.addr.replace("$$","");
+				String s = expressionLabel.code + "\nIf " + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
+				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "Goto LL" + JumpLabels + ":\n" +
+				"L" + (JumpLabels+1) + "\n" + secondBlock + "LL" + JumpLabels + ":\n";
+				JumpLabels++;
+				System.out.println("===========IF expression block ELSE block==============");
+				s = s.replace("\n\n", "\n");
+				System.out.println(s);
+				RESULT = s;
+				System.out.println("=========================");
+			:}
+			| IF simpleStmt:st SEMI_COLON expression:expressionLabel block:blockLabel ELSE ifStmt:ifSt
+			{:
+				expressionLabel.code = expressionLabel.code.replace("$$","");
+				expressionLabel.addr = expressionLabel.addr.replace("$$","");
+				String s = st + "\n" + expressionLabel.code + "\nIf t" + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
+				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "Goto LL" + JumpLabels + "\n" +
+				"L" +  (JumpLabels+1) + ":\n" + ifSt;
+				JumpLabels++;
+				System.out.println("===========IF simpleStmt SEMI_COLON expression block ELSE ifStmt==============");
+				System.out.println(s);
+				RESULT = s;
+				System.out.println("=========================");
+			:}
+			| IF simpleStmt SEMI_COLON expression:expr block ELSE block
+			{:
+				System.out.println("===========IF simpleStmt SEMI_COLON expression block ELSE block==============");
+				System.out.println(expr.toString());
+				RESULT = s;
+				System.out.println("=========================");
+			:};
+
+
+switchStmt	::=	exprSwitchStmt
+				{:
+				:};
+
+
+exprSwitchStmt	::= SWITCH OPEN_CURLY exprCaseClauses CLOSE_CURLY
+					{:
+					:}
+					| SWITCH  simpleStmt SEMI_COLON OPEN_CURLY exprCaseClauses CLOSE_CURLY
+					{:
+					:}
+					| SWITCH expression OPEN_CURLY exprCaseClauses CLOSE_CURLY
+					{:
+					:}
+					| SWITCH simpleStmt SEMI_COLON expression OPEN_CURLY exprCaseClauses CLOSE_CURLY
+					{:
+					:};
+
+
+exprCaseClauses	::=	exprCaseClause exprCaseClauses
+					{:
+					:}
+					|
+					{:
+					:};
+
+exprCaseClause	::= exprSwitchCase COLON statementList
+					{:
+					:};
+
+exprSwitchCase	::=	CASE expressionList
+					{:
+					:}
+					| DEFAULT
+					{:
+					:};
+
+
+forStmt	::=	FOR forClause block
+			{:
+			:};
+
+forClause	::=	initStmt SEMI_COLON condition SEMI_COLON postStmt
+				{:
+				:};
+
+condition	::=	expression
+				{:
+				:};
+
+initStmt	::=	simpleStmt
+				{:
+				:};
+
+
+postStmt	::=	simpleStmt
+				{:
+				:};
+
+
+returnStmt	::=	RETURN
+				{:
+				:}
+				| RETURN expressionList
+				{:
+				:};
+
+
+breakStmt	::=	BREAK
+				{:
+				:};
+
+
+
+identifierList	::=	IDENTIFIER:IDENTIFIERLabel
+					{:
+						RESULT = IDENTIFIERLabel;
+					:}
+					| IDENTIFIER:IDENTIFIERLabel COMMA identifierList:IDENTIFIERListLabel
+					{:
+
+					:};
+
+expressionList	::=	expression:expr
+					{:
+						RESULT = expr.toString();
+					:}
+					| expression:expr COMMA expressionList:el
+					{:
+						RESULT = expr.toString()+",,," + el;
+					:};
+
+
+
+
+expression	::=	unaryExpr:unaryExprLabel
+				{:
+					////System.out.println("unaryExpr");
+					RESULT = new Expression(unaryExprLabel);
+					//System.err.println(RESULT);
+				:}
+				|
+				expression:expr1 REL_OP:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					/*System.out.println(RESULT.toString());*/
+				:}
+				|
+				expression:expr1 OR_OP:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 AND_OP:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 PLUS:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 MINUS:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 ASTRISK:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 SLASH:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 PERCENT:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 SHIFT_RIGHT:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 SHIFT_LEFT:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 AMBERSAND:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:}
+				|
+				expression:expr1 EXCLAMATION:operation expression:expr2
+				{:
+					RESULT = new Expression(expr1, expr2, operation, tempCounter);
+					tempCounter ++;
+					//System.out.println(RESULT.toString());
+				:};
+
+
+type	::= typeName
+			{:
+			:}
+			| typeLit
+			{:
+			:};
+
+
+typeName	::=	IDENTIFIER
+				{:
+				:};
+
+
+typeLit	::=	functionType
+			{:
+			:};
+
+
+functionType	::=	FUNC signature
+					{:
+					:};
+
+
+varDecl	::=	VAR varSpec:varSpecLabel
+			{:
+				//System.out.println("============varDecl=========================");
+				RESULT = varSpecLabel;
+				//System.out.println(varSpecLabel);
+				//System.out.println("=====================================");
+			:}
+			| VAR OPEN_PARAN varSpecs CLOSE_PARAN
+			{:
+			:};
+
+
+varSpecs	::= varSpec SEMI_COLON varSpecs
+				{:
+				:}
+				|
+				{:
+				:};
+
+
+varSpec	::= IDENTIFIER:lexicalLabel EQUAL expression:expressionLabel
+			{:
+				expressionLabel.code = expressionLabel.code.replace("$$","");
+				expressionLabel.addr = expressionLabel.addr.replace("$$","");
+				RESULT = expressionLabel.code + "\n" + lexicalLabel + " = " + expressionLabel.addr + "\n";
+			:}
+			| IDENTIFIER type
+			{:
+			:}
+			| IDENTIFIER type EQUAL expression
+			{:
+			:};
+
+
+
+shortVarDecl	::= identifierList:identifierListLabel	COLON_EQUAL	expression:expressionLabel
+					{:
+						System.err.println("shortVarDecl   ERROR");
+						System.err.println(expressionLabel);
+						System.err.println(identifierListLabel);
+						if(expressionLabel.code.length() == 0)
+						{
+							String arr[] = expressionLabel.addr.split("\\$\\$");
+							//System.err.println( arr[1]);
+							//System.out.print(identifierListLabel + " = " + arr[0]);
+							if(arr.length>1){
+									RESULT = arr[1] + "\n" + identifierListLabel + " = " + arr[0] + "\n";
+							}
+							else {
+								RESULT = identifierListLabel + " = " + arr[0] + "\n";
+							}
+
+						}
+						else{
+							System.err.println("shortVarDecl   ERROR");
+						}
+						/*System.out.println(identifierListLabel + " = " + expressionLabel.addr);*/
+					:};
+
+
+functionDecl	::= FUNC functionName:functionNameLabel function:function
+					{:
+						System.out.println(functionNameLabel+":");
+						function = function.replace("\n\n", "\n");
+						System.out.println("begin_func;");
+						System.out.print(function);
+						System.out.println("end_func;");
+					:}
+					| FUNC functionName signature
+					{:
+					:};
+
+functionName	::= IDENTIFIER:lexicalLabel
+					{:
+						RESULT = lexicalLabel;
+					:};
+
+methodDecl	::= FUNC receiver methodName function
+				{:
+				:}
+				| FUNC receiver methodName signature
+				{:
+				:};
+
+receiver	::= parameters
+				{:
+				:};
+
+
+methodName	::=	IDENTIFIER
+				{:
+				:};
+
+
+unaryExpr	::=	primaryExpr:primaryExprLabel
+				{:
+					RESULT = primaryExprLabel;
+					System.out.println("unaryExpr ======> unaryExpression");
+				:}
+				| MINUS unaryExpr:unaryExpression
+				{:
+					RESULT = " - " + unaryExpression;
+					////System.out.println("unaryExpression");
+				:}
+				| EXCLAMATION unaryExpr:unaryExpression
+				{:
+					RESULT = " ! " + unaryExpression;
+					////System.out.println("unaryExpression");
+				:}
+				| ASTRISK unaryExpr:unaryExpression
+				{:
+					RESULT = " * " + unaryExpression;
+					////System.out.println("unaryExpression");
+				:};
+
+primaryExpr	::=	operand:operandLabel
+				{:
+					System.out.println("Primary expression -----> operand");
+					RESULT = operandLabel;
+					System.out.println(RESULT);
+				:}
+				| primaryExpr selector
+				{:
+					System.err.println("+++++++++++++++++++++");
+					System.out.println("primaryExpr	::= primaryExpr selector");
+				:}
+				| primaryExpr:pr arguments:args
+				{:
+					//System.out.println(pr);
+					System.err.println("+++++++++++++++++++++");
+					args = args.replace("\n", "");
+					String argsArr[] = args.split(",,,");
+					String s = "";
+					for(int i=0; i<argsArr.length; i++){
+						s += "push_params: " + argsArr[i] + "\n";
+					}
+					s  += pr + "\n";
+					s += "pop_params;" + "\n";
+					/*for(int i=0; i<argsArr.length; i++){
+						s += "pop_params;" + "\n";
+					}*/
+					RESULT = s;
+					System.err.println("+++++++++++++++++++++");
+					System.out.println(s);
+					System.out.println("primaryExpr	::= primaryExpr arguments");
+				:};
+
+
+
+selector	::= DOT IDENTIFIER
+				{:
+					System.out.println("=============selector=================");
+				:};
+
+arguments	::=	OPEN_PARAN CLOSE_PARAN
+				{:
+					System.out.println("=============arguments=================");
+				:}
+				| OPEN_PARAN expressionList:el CLOSE_PARAN
+				{:
+					RESULT = el;
+					System.out.println("=============arguments=================");
+				:};
+
+
+methodExpr	::=	DOT receiverType DOT methodName
+				{:
+					System.out.println("=============methodExpr=================");
+				:};
+
+
+receiverType	::=	OPEN_PARAN ASTRISK typeName CLOSE_PARAN
+					{:
+					:}
+					| OPEN_PARAN typeName CLOSE_PARAN
+					{:
+					:};
+
+operand	::=	literal:literalLabel
+			{:
+				System.err.println(literalLabel);
+				RESULT = literalLabel;
+				System.out.println("operand	::=	literal");
+			:}
+			| operandName:operandNameLabel
+			{:
+				RESULT = operandNameLabel;
+				System.out.println("operand	::=	operandName");
+			:}
+			| methodExpr
+			{:
+				System.out.println("operand	::=	methodExpr");
+			:}
+			| OPEN_PARAN expression:expressionLabel CLOSE_PARAN
+			{:
+				RESULT = expressionLabel.addr + "\n" + expressionLabel.code;
+				System.out.println("operand	::=	OPEN_PARAN expression:expressionLabel CLOSE_PARAN");
+			:};
+
+literal	::=	basicLit:basicLitLabel
+			{:
+				RESULT = basicLitLabel;
+			:}
+			| functionLit:functionLitLABEL
+			{:
+				RESULT = functionLitLABEL;
+			:};
+
+
+basicLit	::=	INT_LIT:INT_LIT_LABEL
+				{:
+					RESULT = INT_LIT_LABEL;
+				:}
+				| STRING_LIT:STRING_LIT_LABEL
+				{:
+					RESULT = STRING_LIT_LABEL;
+				:};
+
+operandName	::=	IDENTIFIER:lexicalValue
+				{:
+					RESULT = lexicalValue;
+				:}
+				| qualifiedIdent:lexicalValue
+				{:
+					RESULT = lexicalValue;
+				:};
+
+
+qualifiedIdent	::=	DOT packageName DOT IDENTIFIER:lexical
+					{:
+						System.err.println(lexical);
+						System.out.println("t" + tempCounter + "= call " + lexical);
+						System.out.println("=============qualifiedIdent=================");
+						RESULT = "t" + tempCounter + "= call " + lexical;
+												tempCounter++;
+					:};
+
+functionLit	::=	FUNC function
+				{:
+				:};
+
+
+function	::=	signature functionBody:functionBodyLabel
+				{:
+					RESULT = functionBodyLabel;
+				:};
+
+signature	::=	parameters
+				{:
+				:}
+				| parameters result
+				{:
+				:};
+
+
+result	::=	parameters
+			{:
+			:}
+			| OPEN_PARAN type CLOSE_PARAN
+			{:
+			:};
+
+parameters	::=	OPEN_PARAN CLOSE_PARAN
+				{:
+				:}
+				| OPEN_PARAN parameterList CLOSE_PARAN
+				{:
+				:};
+
+
+parameterList	::=	parameterDecl
+					{:
+					:}
+					| parameterDecl COMMA parameterList
+					{:
+					:};
+
+
+parameterDecl	::= identifierList type
+					{:
+					:}
+					| identifierList CDOTS type
+					{:
+					:};
+
+functionBody	::= block:blockLabel
+					{:
+						RESULT = blockLabel;
+					:};
+
+
+block	::= OPEN_CURLY statementList:statementListLABEL CLOSE_CURLY
+			{:
+				RESULT = statementListLABEL;
+				System.out.println("================statementList===============");
+				System.out.println(statementListLABEL);
+				System.out.println("===============================");
+			:};
+
+
+statementList	::=	statement:statementListLABEL statementList:st
+					{:
+						System.out.println("=========ADDING STATEMENT=========");
+						System.out.println(statementListLABEL);
+						RESULT = statementListLABEL + st;
+					:}
+					|
+					{:
+						RESULT = "";
+					:};
+
+packageClause	::=	PACKAGE packageName
+					{:
+					:};
+
+
+importDecls	::=	importDecl optionalSemiColon importDecls
+				{:
+				:}
+				|
+				{:
+				:};
+
+importDecl	::=	IMPORT	importSpec
+				{:
+				:}
+				| IMPORT OPEN_PARAN importSpecs CLOSE_PARAN
+				{:
+				:};
+
+importSpecs	::=	importSpec optionalSemiColon importSpecs
+				{:
+				:}
+				|
+				{:
+				:};
+
+importSpec	::=	importPath
+				{:
+				:}
+				| DOT importPath
+				{:
+					System.out.println("=============importSpec=================");
+				:}
+				| packageName importPath
+				{:
+				:};
+
+importPath	::=	STRING_LIT
+				{:
+				:};
+
+packageName	::=	IDENTIFIER
+				{:
+				:};
+
+
+optionalSemiColon	::=	SEMI_COLON
+						{:
+						:}
+						|
+						{:
+						:};
+
+
+assignOp	::=	PLUS
+				{:
+				:}
+				|
+				MINUS
+				{:
+				:}
+				|
+				mulOp
+				{:
+				:};
+
+
+mulOp	::=	ASTRISK
+			{:
+			:}
+			| SLASH
+			{:
+			:}
+			| SHIFT_LEFT
+			{:
+			:}
+			| SHIFT_RIGHT
+			{:
+			:}
+			| PERCENT
+			{:
+			:}
+			| AMBERSAND
+			{:
+			:};
