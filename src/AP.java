@@ -10,7 +10,7 @@ public class AP {
 
 	public static void main(String[] args) {
 
-		String inFile = "MS3/Go3.in";
+		String inFile = "MS3/Go2.in";
 		String outFile = "Go1.out";
 
 		
