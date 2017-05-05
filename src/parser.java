@@ -1257,7 +1257,8 @@ class CUP$parser$actions {
 				expressionLabel.code = expressionLabel.code.replace("$$","");
 				expressionLabel.addr = expressionLabel.addr.replace("$$","");
 				String s = expressionLabel.code + "\nIf " + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
-				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "L" +  (JumpLabels+1) + ":\n";
+				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":" + "\n" + blockLabel + "L" +  (JumpLabels+1) + ":" + "\n";
+				JumpLabels++;
 				JumpLabels++;
 				s = s.replace("\n\n", "\n");
 				System.out.println(s);
@@ -1286,7 +1287,8 @@ class CUP$parser$actions {
 				expressionLabel.code = expressionLabel.code.replace("$$","");
 				expressionLabel.addr = expressionLabel.addr.replace("$$","");
 				String s = st + expressionLabel.code + "\nIf " + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
-				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "L" +(JumpLabels+1)+":\n" ;
+				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":" + "\n" + blockLabel + "L" +(JumpLabels+1)+":" + "\n" ;
+				JumpLabels++;
 				JumpLabels++;
 				s = s.replace("\n\n", "\n");
 				System.out.println(s);
@@ -1313,8 +1315,17 @@ class CUP$parser$actions {
 		
 				expressionLabel.code = expressionLabel.code.replace("$$","");
 				expressionLabel.addr = expressionLabel.addr.replace("$$","");
-				String s = expressionLabel.code + "\nIf " + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
-				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "L" +  (JumpLabels+1) + ":\n" + ifst;
+				String s = expressionLabel.code + "\nIf " + expressionLabel.addr +
+			    " Goto L" + JumpLabels + "\n" +
+			    "Goto L" + (JumpLabels+1) + "\n" +
+			    "L" + JumpLabels +":" + "\n" + blockLabel +
+
+			    "GoTO LL" + JumpLabels +  "\n" +
+
+			    "L" +  (JumpLabels+1) + ":" + "\n" + ifst +
+			    "LL"+JumpLabels+":\n";
+			    ;
+			    JumpLabels++;
 				JumpLabels++;
 				System.out.println("===========IF expression block ELSE ifStmt==============");
 				s = s.replace("\n\n", "\n");
@@ -1342,10 +1353,15 @@ class CUP$parser$actions {
 		
 				expressionLabel.code = expressionLabel.code.replace("$$","");
 				expressionLabel.addr = expressionLabel.addr.replace("$$","");
-				String s = expressionLabel.code + "\nIf " + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
-				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "Goto LL" + JumpLabels + ":\n" +
-				"L" + (JumpLabels+1) + "\n" + secondBlock + "LL" + JumpLabels + ":\n";
+				String s = expressionLabel.code + "\nIf " + expressionLabel.addr +
+                " Goto L" + JumpLabels + "\n" +
+				"Goto L" + (JumpLabels+1) + "\n" +
+                "L" + JumpLabels +":" + "\n" + blockLabel +
+                "Goto LL" + JumpLabels + "\n" +
+				"L" + (JumpLabels+1) + ":" + "\n" + secondBlock +
+                "LL" + JumpLabels + ":\n";
 				JumpLabels++;
+                JumpLabels++;
 				System.out.println("===========IF expression block ELSE block==============");
 				s = s.replace("\n\n", "\n");
 				System.out.println(s);
@@ -1375,9 +1391,15 @@ class CUP$parser$actions {
 		
 				expressionLabel.code = expressionLabel.code.replace("$$","");
 				expressionLabel.addr = expressionLabel.addr.replace("$$","");
-				String s = st + "\n" + expressionLabel.code + "\nIf t" + expressionLabel.addr + " Goto L" + JumpLabels + "\n" +
-				"Goto L" + (JumpLabels+1) + "\n" + "L" + JumpLabels +":\n" + blockLabel + "Goto LL" + JumpLabels + "\n" +
-				"L" +  (JumpLabels+1) + ":\n" + ifSt;
+
+				String s = st + "\n" + expressionLabel.code + "\nIf" + expressionLabel.addr +
+				" Goto L" + JumpLabels + "\n"
+				+ "Goto L" + (JumpLabels+1) + "\n" +
+				"L" + JumpLabels +":" + "\n" + blockLabel +
+				"Goto LL" +JumpLabels + "\n" +
+				"L" +  (JumpLabels+1) + ":" + "\n" + ifSt +
+				"LL" + JumpLabels+":\n";
+				JumpLabels++;
 				JumpLabels++;
 				System.out.println("===========IF simpleStmt SEMI_COLON expression block ELSE ifStmt==============");
 				System.out.println(s);
